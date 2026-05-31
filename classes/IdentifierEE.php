@@ -13,14 +13,14 @@ class IdentifierEE {
     public $status;
     
     public function __construct(array $data) {
-        $this->id = $data[0] ?? null;
-        $this->field1 = $data[1] ?? null;
-        $this->field2 = $data[2] ?? null;
-        $this->field3 = $data[3] ?? null;
-        $this->field4 = $data[4] ?? null;
-        $this->code = $data[5] ?? null;
-        $this->status = $data[6] ?? null;
-    }
+    $this->id = isset($data[0]) ? $data[0] : null;
+    $this->field1 = isset($data[1]) ? $data[1] : null;
+    $this->field2 = isset($data[2]) ? $data[2] : null;
+    $this->field3 = isset($data[3]) ? $data[3] : null;
+    $this->field4 = isset($data[4]) ? $data[4] : null;
+    $this->code = isset($data[5]) ? $data[5] : null;
+    $this->status = isset($data[6]) ? $data[6] : null;
+}
 }
 
 // Использование
