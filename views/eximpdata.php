@@ -10,7 +10,7 @@
             margin: 2px 0; 
             border-radius: 4px;
         }
-    </style>
+</style>
 <?php
 	
 	//echo Debug::vars('16', Session::instance() );//exit;
@@ -161,6 +161,27 @@ $modules = Kohana::modules();
   </fieldset>
     
 
+<fieldset>
+    <legend>
+        <a data-toggle="collapse" href="#csvFormatCollapse" role="button" aria-expanded="false" aria-controls="csvFormatCollapse" style="display: block; text-decoration: none; color: inherit;">
+            Формат csv файла для импорта
+            <span class="pull-right" style="font-size: 14px; font-weight: normal;">▼ показать</span>
+        </a>
+    </legend>
+    
+    <div class="collapse" id="csvFormatCollapse">
+        <div class="alert alert-success">
+            <?php echo __('Формат :about', 
+                array(
+                    ':info'=> $module_info['csv_format'],
+                    ':about'=> $module_info['csv_format']));?>
+            <br>
+            <?php //echo __('about_eximport');?>
+        </div>
+    </div>
+</fieldset>
+    
+
 	<fieldset>
 		<legend>Предупреждение</legend>
     
@@ -238,7 +259,6 @@ $modules = Kohana::modules();
 ?>			
 		
 
-
 			
 		
 	  </div>
@@ -256,6 +276,12 @@ $modules = Kohana::modules();
             </div>
             <div class="modalm-body">
                 <h3>Будет выполнена вставка пользователей в организацию</h3>
+                
+                <!-- БЛОК С НАЗВАНИЕМ ОРГАНИЗАЦИИ ДЛЯ modalm-1 -->
+                <div class="org-info" style="background: #e8f4f8; padding: 10px 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #337ab7;">
+                    <strong>Организация:</strong> <span id="org-name-display-1" style="color: #337ab7;">не выбрана</span>
+                    <span style="color: #666; font-size: 12px;">(ID: <span id="org-id-display-1">—</span>)</span>
+                </div>
                 
                 <div class="row">
                     <div class="kartka">
@@ -295,6 +321,12 @@ $modules = Kohana::modules();
             <div class="modalm-body">
                 <h3 id="modal-desc-2">Будет выполнена вставка организаций и пользователей в выбранную организацию</h3>
                 
+                <!-- БЛОК С НАЗВАНИЕМ ОРГАНИЗАЦИИ ДЛЯ modalm-2 -->
+                <div class="org-info" style="background: #e8f4f8; padding: 10px 15px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #337ab7;">
+                    <strong>Организация:</strong> <span id="org-name-display-2" style="color: #337ab7;">не выбрана</span>
+                    <span style="color: #666; font-size: 12px;">(ID: <span id="org-id-display-2">—</span>)</span>
+                </div>
+                
                 <div class="row">
                     <div class="kartka">
                         <p>Поддерживаемые форматы: json</p>
@@ -329,16 +361,25 @@ $modules = Kohana::modules();
  //https://learn.javascript.ru/function-object
 $(function() {
 	
-     $(".btn").click(
+     $(".popup-contact").click(
        function() {
-         var bname = $(this).attr('org-name');
-         var bprice = $(this).attr('org_id');
-
-	
-         $(".kartka h1").text(bname);
-         $(".kartka p").html(bprice);
-		 document.getElementById("id_org1").value = $(this).attr('org_id');
-		 document.getElementById("id_org2").value = $(this).attr('org_id2');
+         var orgName = $(this).attr('org-name');
+         var orgId = $(this).attr('org_id');
+         var orgId2 = $(this).attr('org_id2');
+         
+         // Для модального окна modalm-1 (импорт пользователей)
+         if ($(this).attr('for') == 'modalm-1') {
+             $("#org-name-display-1").text(orgName);
+             $("#org-id-display-1").text(orgId);
+             document.getElementById("id_org1").value = orgId;
+         }
+         
+         // Для модального окна modalm-2 (импорт дерева)
+         if ($(this).attr('for') == 'modalm-2') {
+             $("#org-name-display-2").text(orgName);
+             $("#org-id-display-2").text(orgId2);
+             document.getElementById("id_org2").value = orgId2;
+         }
        });
 	
 
@@ -346,6 +387,3 @@ $(function() {
  
  
 </script>
-
-
-

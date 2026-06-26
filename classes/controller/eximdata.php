@@ -392,7 +392,7 @@ class Controller_eximdata extends Controller_Template{
 				if($data->check())//если карты нет в БД, то добавляем ее в базу данных
 				{
 					
-					$keyNameList=array('id', 'name', 'surname', 'patronymic', 'note', 'key', 'type');
+					$keyNameList=array('id', 'surname', 'name', 'patronymic', 'note', 'key', 'type');
 					$list2[]=array_combine($keyNameList, $value);
 			
 			
@@ -450,9 +450,9 @@ class Controller_eximdata extends Controller_Template{
 
 						$result_mess[]= __('377 ok Карта :card пользователя :f :i :o тип :cardType зарегистрирована успешно в организацию :orgName.',
 							array(
-								':ffrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'SURNAME')),
-								':ifrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'NAME')),
-								':ofrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'PATRONYMIC')),
+								':ffrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'SURNAME')),//фамилия
+								':ifrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'NAME')),//имя
+								':ofrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'PATRONYMIC')),//отчество
 								':orgName'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'ORGNAME')),
 								':f'=>iconv('windows-1251','UTF-8',Arr::get($value, 1)),
 								':i'=>iconv('windows-1251','UTF-8',Arr::get($value, 2)),
