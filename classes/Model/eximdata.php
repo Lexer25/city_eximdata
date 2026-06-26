@@ -708,7 +708,7 @@ class Model_eximdata extends Model
 				':card'=>$card,
 			));
 			
-			
+//	Log::instance()->add(Log::NOTICE, '711: '.$sql);		
 		$query = DB::query(Database::SELECT, $sql)
 			->execute(Database::instance('fb'))
 			->as_array();

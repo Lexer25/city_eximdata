@@ -346,7 +346,10 @@ class Controller_eximdata extends Controller_Template{
 	{
 			$id_org=Arr::get($_POST, 'id_org1');
 			$data=array();
-			$list=array();
+			$list=array();//массив - строки из файли для импорта
+			$list2=array();//тут собирается массив уникальных записей для вставки в базу данных
+			$list_error=array();
+			
 			$sourceFile = Arr::get($_FILES[$this->cacheFileName], 'name');//сохраняю имя файла для последующих комментариев
 			
 			$filename = $this->_uploadFile('csv');//загружаю файл типа csv
@@ -354,19 +357,43 @@ class Controller_eximdata extends Controller_Template{
 			$countrow=1;
 			//чтение данных из файла и преобразование их в массив			
 				
-				if (($fp = fopen($filename, "r")) !== FALSE) {
+				try {
+					$fp = fopen($filename, "r");
+					if ($fp === FALSE) {
+						throw new Exception('Не удалось открыть файл для импорта.');
+					}
+					
 					while (($data = fgetcsv($fp, 0, ";")) !== FALSE) {
 						$list[] = $data;
-						
 					}
 					fclose($fp);
-				} else {
 					
-					echo Debug::vars('364');exit;
+				} catch (Exception $e) {
+					Kohana::$log->add(Log::ERROR, 'Ошибка при чтении файла: ' . $e->getMessage());
+					Session::instance()->set('e_mess', array('file_read_error' => $e->getMessage()));
+					$this->redirect('/eximdata');
 				}
-	//	echo Debug::vars('407',$data, $list);exit;	
-			//валидация полученных данных. Цель валидации - убедиться, что номеро карт нет в базе данных.
-		$list_error=array();
+		
+			//валидация полученных данных. Цель валидации - убедиться, что номеров карт нет в базе данных.
+/*
+  0 => array(7) (
+        0 => string(1) "1"
+        1 => string(6) "ivanov"
+        2 => string(4) "Ivan"
+        3 => string(6) "vanvan"
+        4 => string(0) ""
+        5 => string(10) "1234567890"
+        6 => string(1) "1"
+    )
+    1 => array(7) (
+        0 => string(1) "2"
+        1 => string(1) "i"
+        2 => string(0) ""
+        3 => string(0) ""
+        4 => string(0) ""
+        5 => string(10) "ABCDEF1234"
+        6 => string(1) "1"
+    )*/
 			foreach($list as $key=>$value)
 			{
 			$countrow++;
@@ -374,34 +401,28 @@ class Controller_eximdata extends Controller_Template{
 				$data=Validation::factory($value);
 				$data->rule(0, 'digit')
 					->rule(0, 'not_empty')
-					->rule(1, 'max_length', array(':value', $this->nameLen))
-					->rule(2, 'max_length', array(':value', $this->surNameLen))
-					->rule(3, 'max_length', array(':value', $this->patronymicLen))
+					->rule(1, 'max_length', array(':value', $this->surNameLen))//контроль длины фамилии
+					->rule(2, 'max_length', array(':value', $this->nameLen))//контроль длины имени
+					->rule(3, 'max_length', array(':value', $this->patronymicLen))//контроль длиныы отчества
 					->rule(4, 'max_length', array(':value', $this->noteLen))
 					
 					//->rule(5, 'regex', array(':value', '/^[A-F\d]{10}+$/')) // https://regex101.com/
 					//->rule(5, 'Model_eximdata::unique_card') //проверка идентификатора на уникальность.
 					->rule(5, 'not_empty')
-					->rule(5, array('Model_eximdata', 'unique_card'), array(':value', Arr::get($value, 6)))
+					->rule(5, array('Model_eximdata', 'unique_card'), array(':value', Arr::get($value, 6)))//проверка уникальность идентификатора
 					->rule(6, 'not_empty')
-					->rule(6, 'regex', array(':value', '/^[1-5]{1}+$/')) //^[1-5]{1}+$ https://regex101.com/
+					->rule(6, 'regex', array(':value', '/^[1-5]{1}+$/')) //^[1-5]{1}+$ https://regex101.com/ тип идентификатора должен быть от 1 до 5
 					;
 				$keyTypeList=$this->_getCardtype();//получил список типов карт.
 				
 				//echo Debug::vars('427', $data);exit;
-				if($data->check())//если карты нет в БД, то добавляем ее в базу данных
+				if($data->check())//если карты нет в БД, то добавляем ее в массив list2 (которые затем будут загружаться
 				{
-					
 					$keyNameList=array('id', 'surname', 'name', 'patronymic', 'note', 'key', 'type');
 					$list2[]=array_combine($keyNameList, $value);
-			
-			
 				
-				} else {
-					 
+				} else { //если карта есть в базе данных, то формирую запись в массиве ошибок и лог-файле
 					$fioo = Model::factory('eximdata')->getInforForCard(Arr::get($data, 5));
-
-					
 						$list_error[]= __('481 err Ошибка в строке :countrow исходных данных :errstring. Ошибка :errMess',
 						array(
 							':errstring'=>iconv('windows-1251','UTF-8',implode(",", $value)),
@@ -426,16 +447,16 @@ class Controller_eximdata extends Controller_Template{
 			} 
 			
 			//проверка данных в массиве list пройдена успешно, теперь можно вставлять данные в организацию
-			$keyNameList=array('id', 'name', 'name2', 'name3', 'note', 'key', 'type');
-			//echo Debug::vars('452 все в порядке, вставляю данные', $list);//exit;
-			//echo Debug::vars('452 все в порядке, вставляю данные', $list2);exit;
-		//	echo Debug::vars('453 все в порядке, вставляю данные', array_combine($keyNameList, $list));exit;
+			//$keyNameList=array('id', 'name', 'name2', 'name3', 'note', 'key', 'type');
+			
 			$addIdPep=array();//список уже вставленных контактов в формате
-			//'id из файла' =>id_pep 
+			$result_mess=array();//тут будет собираться результат вставки контактов
+			
+			//массив @list2 содержит списки людей и идентификаторов, которые надо вставить в БД СКУД
 			foreach($list2 as $key2=>$value2)
 			{
-				//echo Debug::vars('463',iconv('windows-1251','UTF-8', implode(",",$value2)), $addIdPep);exit;
-				$insertIdPep=Arr::get($addIdPep, Arr::get($value2, 'id'));
+							
+				$insertIdPep=Arr::get($addIdPep, Arr::get($value2, 'id'));//проверка: может, у этого пипла несколько карт. если такой id уже был, то карта будет добавлена именно ему.
 				//echo Debug::vars('465', $insertIdPep);exit;
 				if(!$insertIdPep)
 				{	//если не существует ;insertIdPep - значит, этот контакт еще не вставляли
@@ -443,39 +464,31 @@ class Controller_eximdata extends Controller_Template{
 						$insertPeople=Model::factory('eximdata')->insertPeople($value2, $id_org);//получил ID_PEP вставленного пипла
 						$addIdPep[Arr::get($value2, 'id')]=$insertPeople;//добавил в массив id_pep для вновь вставленного контакта
 						
-						if($insertPeople>0)//если не нуль, т.е. вставка прошла успешно, то 
+						if($insertPeople>0)//если не нуль, т.е. вставка прошла успешно, то фиксирую в массиве результата
 						{
-						//	echo Debug::vars('445',$insertPeople, $value2, Arr::get($value2, 'key'));exit;
-							$fioo = Model::factory('eximdata')->getInforForCard(Arr::get($value2, 'key'));
-
+							//echo Debug::vars('445',$insertPeople, $value2, Arr::get($value2, 'key'));//exit;
+							$fioo = Model::factory('eximdata')->getInforForCard(Arr::get($value2, 'key'));//проверка: получаю ФИО и орг по номеру вставленной карт
 						$result_mess[]= __('377 ok Карта :card пользователя :f :i :o тип :cardType зарегистрирована успешно в организацию :orgName.',
 							array(
-								':ffrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'SURNAME')),//фамилия
-								':ifrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'NAME')),//имя
-								':ofrom'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'PATRONYMIC')),//отчество
+								':f'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'SURNAME')),//фамилия
+								':i'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'NAME')),//имя
+								':o'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'PATRONYMIC')),//отчество
 								':orgName'=>iconv('windows-1251','UTF-8',Arr::get($fioo, 'ORGNAME')),
-								':f'=>iconv('windows-1251','UTF-8',Arr::get($value, 1)),
-								':i'=>iconv('windows-1251','UTF-8',Arr::get($value, 2)),
-								':o'=>iconv('windows-1251','UTF-8',Arr::get($value, 3)),
-								':card'=>Arr::get($value, 5),
-								':cardType'=>Arr::get($keyTypeList, Arr::get($value, 6)),
+								':card'=>Arr::get($value2, 'key'),
+								':cardType'=> Arr::get($value2, 'type'),
 								));
 						} else {
 							
 						}
 					
-						
+	
 						
 				} else {//а если уже есть такой контакто, то просто добавляю ему карту
 					//echo Debug::vars('472');exit;
 					Model::factory('eximdata')->addCard($value2, $insertIdPep);//получил ID_PEP вставленного пипла
 				}
 			}				
-			
-			
-	//		echo Debug::vars('476', $addIdPep);exit;
-			
-			
+					
 			Session::instance()->set('result_mess', $result_mess);
 			
 
