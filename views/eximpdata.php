@@ -78,6 +78,14 @@
             flex-wrap: wrap;
             align-items: center;
             margin-top: 15px;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .form-actions .buttons-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
         }
         .org-info {
             background: #e8f4f8;
@@ -85,6 +93,17 @@
             border-radius: 4px;
             margin: 10px 0;
             border-left: 4px solid #337ab7;
+        }
+        .format-error-msg {
+            color: #d9534f;
+            font-size: 13px;
+            margin-top: 8px;
+            font-weight: bold;
+            display: none;
+        }
+        .duplicate-warning {
+            color: #d9534f;
+            display: none;
         }
 </style>
 <?php
@@ -382,7 +401,7 @@ $modules = Kohana::modules();
                         </div>
                         <div style="margin-top: 10px; font-size: 12px; color: #666;">
                             Показано первых 10 строк из <span id="totalRows">0</span>.
-                            <span id="duplicateWarning" style="color: #d9534f; display: none;">
+                            <span class="duplicate-warning" id="duplicateWarning">
                                 ⚠️ Найдены строки с одинаковым ID. Им будут присвоены дополнительные карты.
                             </span>
                         </div>
@@ -391,15 +410,15 @@ $modules = Kohana::modules();
                         <div id="validationError" style="display: none;"></div>
                     </div>
                     
-                    <div class="form-actions" style="flex-direction: column; align-items: flex-start;">
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <div class="form-actions">
+                        <div class="buttons-row">
                             <button type="submit" name="submit" value="Загрузить" class="btn-primary" id="importSubmitBtn" style="display: none;">Подтвердить импорт</button>
                             <button type="button" class="btn-secondary" onclick="resetFileInput()">Очистить</button>
                             <label for="modalm-1" class="btn-secondary">Отмена</label>
                         </div>
                         
                         <!-- КРАСНАЯ НАДПИСЬ ПРИ ОШИБКЕ -->
-                        <div id="formatErrorMsg" style="display: none; color: #d9534f; font-size: 13px; margin-top: 8px; font-weight: bold;">
+                        <div class="format-error-msg" id="formatErrorMsg">
                             ⚠️ См. документацию "Формат CSV файла для импорта" выше
                         </div>
                     </div>
@@ -446,8 +465,10 @@ $modules = Kohana::modules();
                     </div>
                     <input type="hidden" name="id_org2" id="id_org2">
                     <div class="form-actions">
-                        <input type="submit" name="submit" value="Импортировать" class="btn-primary">
-                        <label for="modalm-2" class="btn-secondary">Отмена</label>
+                        <div class="buttons-row">
+                            <input type="submit" name="submit" value="Импортировать" class="btn-primary">
+                            <label for="modalm-2" class="btn-secondary">Отмена</label>
+                        </div>
                     </div>
                 </form> 
             </div>
@@ -459,7 +480,11 @@ $modules = Kohana::modules();
 </div>
     
     
-<script>
+<?php
+// передача данных в модальное окно взято отсюда: https://ru.stackoverflow.com/questions/491392/%D0%9A%D0%B0%D0%BA-%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D1%8C%D0%BD%D0%BE-%D0%B2%D1%8B%D0%B2%D0%B5%D1%81%D1%82%D0%B8-data-%D0%B0%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%82%D1%8B-%D0%B2-%D0%BC%D0%BE%D0%B4%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%BC-%D0%BE%D0%BA%D0%BD%D0%B5-bootstrap
+?>    
+ <script>
+ //https://learn.javascript.ru/function-object
 $(function() {
     
      $(".popup-contact").click(
